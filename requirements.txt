@@ -1,0 +1,6 @@
+tensorflow==2.9.2
+tensorflow-object-detection-api==0.1.1
+opencv-python==4.7.0.72
+pandas
+filterpy
+matplotlib
