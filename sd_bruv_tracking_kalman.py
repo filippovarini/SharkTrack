@@ -21,6 +21,9 @@ from keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 import visualization_utils as vis_util
 from PIL import Image
+from filterpy.kalman import KalmanFilter
+from filterpy.common import Q_discrete_white_noise
+
 
 ##############################################################################################
 # Old frames will be erased when running this script -- SAVE YOUR DETECTIONS
@@ -37,37 +40,12 @@ models = "./models/"
 shark_class_id = 1
 category_index = {shark_class_id: {'id': shark_class_id, 'name': 'shark'}}
 ##############################################################################################
-# Load CNN models
-# optimizer = tfa.optimizers.RectifiedAdam()
-def load_GSC():
-    # model = load_model("/home/csteam/SDv3/GSC_VIT_mod/", compile=False)
-    # model = load_model("/home/csteam/SDv3/model_gen.hdf5", compile=False)
-    model = load_model("./models/GSC_mod/")
-    print("GSC loaded")
-    return model
-
-def load_SC(mod, specmod):
-    if mod not in specmod:
-        # load class labels for each SSCg model
-        classes = sorted(pickle.loads(open(labels + mod + ".pickle", "rb").read()))
-        # create dictionary of models and labels
-        specmod[mod] = [load_model(models + mod + "_mod"),classes] 
-        print("\r" + mod + "--loaded")
-    return specmod
-
 def img_to_classify(det_img, size, batch_size):
     img_1 = img_to_array(det_img.resize(size))
     img_1 = img_1.reshape((batch_size, img_1.shape[0], 
                         img_1.shape[1], img_1.shape[2]))
     img_1 = img_1/255
     return img_1
-
-def SC_predict(mod, img_1, labels):
-    mod_pred = mod.predict(img_1)
-    mod_pred_dict = dict(zip(labels, mod_pred.tolist()[0]))
-    mod_top = sorted(mod_pred_dict, key=mod_pred_dict.get, reverse=True)[:1][0]
-    print(mod_top)
-    return mod_top
 
 def open_vid(videofile):
     try:
