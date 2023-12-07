@@ -182,7 +182,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 cv2.imwrite("live.jpg", retrieve_frame(cap, count, frame_cap)[1]) # view unaltered frames
             
             # Predict next location of Kalman Filters regardless of whether a shark was detected
-            for kf, i in enumerate(kalman_filters):
+            for i, kf in enumerate(kalman_filters):
                 if i == kalman_index:
                     continue
                 kf.predict()
