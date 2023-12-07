@@ -33,8 +33,6 @@ SL_model="SL_modelv3"
 detect_fn=tf.saved_model.load(SL_model)
 specmod = dict() # load empty species model dictionary
 models = "./models/"
-labels = "./labels/"
-gsc_labels = sorted(pickle.loads(open("./labels/GSC.pickle", "rb").read()))
 # Loading label map
 shark_class_id = 1
 category_index = {shark_class_id: {'id': shark_class_id, 'name': 'shark'}}
@@ -159,7 +157,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
 
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
-    FILE_OUTPUT = vid_dir + 'greyreef.avi'
+    FILE_OUTPUT = frame_path + "detection_box.avi"
     if os.path.isfile(vid_dir + FILE_OUTPUT):
         os.remove(vid_dir + FILE_OUTPUT)
     out = cv2.VideoWriter(FILE_OUTPUT, cv2.VideoWriter_fourcc('M','J','P','G'),
@@ -185,7 +183,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 # We have a shark!
                 name = frame_path + "frame%d.jpg"%count
                 img_1 = img_to_classify(cropped_image, (224,224), 1)
-                frame_df = pd.DataFrame([[video_name, "frame%d"%count, time, "shark", conf]], 
+                frame_df = pd.DataFrame([[video_name, "frame%d"%count, time, "shark", "", conf]], 
                             columns=list(dat.columns))
                 
                 # Write classification to video frame and sreadsheet
@@ -193,7 +191,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                         cv2.FONT_HERSHEY_SIMPLEX, 1.8, 
                         (57,255,20), 3, cv2.LINE_AA, False)
                 dat = pd.concat([frame_df, dat])
-                cv2.imwrite(name, frame)
+                # cv2.imwrite(name, frame) also save the frame
                 cv2.imwrite("live.jpg", retrieve_frame(cap, count, frame_cap)[1]) # view unaltered frames
             out.write(frame) # for writing a detection box video 
             count = count + interval_frame
@@ -205,4 +203,4 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
     cap.release()
     dat = dat.iloc[::-1]
     dat.to_csv("./data/" + video_name + "_SDvid.csv", index=False)
-    # out.release() # close and save the detection box video
+    out.release() # close and save the detection box video
