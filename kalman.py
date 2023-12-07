@@ -1,5 +1,6 @@
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
+from scipy.linalg import block_diag
 import numpy as np
 
 def initialize_kalman_filter(bbox):
@@ -29,7 +30,9 @@ def initialize_kalman_filter(bbox):
     
     kf.P *= 10.                     # Initial uncertainty
 
-    kf.Q = Q_discrete_white_noise(dim=2, dt=1, var=0.05)  # Process noise
+    q= Q_discrete_white_noise(dim=4, dt=1, var=0.05)  # Process noise. Might have different values for position and velocity. In that case, use block_diag
+    # kf.Q = block_diag(q, q)
+    kf.Q = q
 
     return kf
 

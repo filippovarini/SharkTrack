@@ -151,6 +151,8 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
             thresh = 0.80 # threshold for SL to detect a shark -- adjust this based on sensitivity
             # For now return only one detection per frame. 
             frame, conf, cropped_image, txtloc, bounding_box = detect(frame, thresh)
+
+            kalman_index = 0
             if conf>thresh:
                 # We have a shark!
                 
@@ -163,8 +165,8 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                     print('initialized a new Kalman filter')
                 else:
                     # Match the detection to an existing Kalman filter
-                    index = match_detection_to_track(kalman_filters, bbox_centre)
-                    kalman_filters[index].update(bbox_centre)
+                    kalman_index = match_detection_to_track(kalman_filters, bbox_centre)
+                    kalman_filters[kalman_index].update(bbox_centre)
 
 
                 name = frame_path + "frame%d.jpg"%count
@@ -180,7 +182,9 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 cv2.imwrite("live.jpg", retrieve_frame(cap, count, frame_cap)[1]) # view unaltered frames
             
             # Predict next location of Kalman Filters regardless of whether a shark was detected
-            for kf in kalman_filters:
+            for kf, i in enumerate(kalman_filters):
+                if i == kalman_index:
+                    continue
                 kf.predict()
                 predicted_position = kf.x[:2]
                 frame = cv2.circle(frame, (int(predicted_position[0]), int(predicted_position[1])), 10, (0,0,255), -1)
