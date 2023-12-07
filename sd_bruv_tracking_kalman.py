@@ -151,6 +151,8 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
             thresh = 0.80 # threshold for SL to detect a shark -- adjust this based on sensitivity
             # For now return only one detection per frame. 
             frame, conf, cropped_image, txtloc, bounding_box = detect(frame, thresh)
+            bbox_h = bounding_box[3] - bounding_box[2]
+            bbox_w = bounding_box[1] - bounding_box[0]
 
             kalman_index = 0
             if conf>thresh:
@@ -161,7 +163,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 if len(kalman_filters) == 0:
                     # First shark detection, initialize a new Kalman filter
                     kf = initialize_kalman_filter(bbox_centre)
-                    kalman_filters.append(kf)
+                    kalman_filters.append((kf, (bbox_w, bbox_h)))
                     print('initialized a new Kalman filter')
                 else:
                     # Match the detection to an existing Kalman filter
@@ -186,10 +188,12 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 if i == kalman_index:
                     continue
                 kf.predict()
-                predicted_position = kf.x[:2]
-                frame = cv2.circle(frame, (int(predicted_position[0]), int(predicted_position[1])), 10, (0,0,255), -1)
-                    
-
+                x, y = kf.x[:2]
+                label = "Shark " + str(i) # Create label with id of the Kalman filter
+                bbox = (int(x - bbox_w/2), int(y - bbox_h/2), int(x + bbox_w/2), int(y + bbox_h/2))
+                frame = cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2) # Draw bounding box
+                frame = cv2.putText(frame, label, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2) # Add label
+                
             out.write(frame) # for writing a detection box video 
             count = count + interval_frame
             print('frame ' + str(count), end='\r')
