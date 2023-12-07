@@ -19,11 +19,9 @@ import sys
 import pandas as pd
 from keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
+from kalman import initialize_kalman_filter, match_detection_to_track
 import visualization_utils as vis_util
 from PIL import Image
-from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
-
 
 ##############################################################################################
 # Old frames will be erased when running this script -- SAVE YOUR DETECTIONS
@@ -150,15 +148,32 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
     # if mb_size>250: # checks if video is larger than 250mb
     #     frame_cap = 100
 
+    kalman_filters = []
+
     while ret:
         # Capture frame-by-frame
         ret, frame = retrieve_frame(cap, count, frame_cap)
         time = int(math.floor((count*(frame_cap/fps))/fps))
         if ret == True:
             thresh = 0.80 # threshold for SL to detect a shark -- adjust this based on sensitivity
+            # For now return only one detection per frame. 
             frame, conf, cropped_image, txtloc, bounding_box = detect(frame, thresh)
             if conf>thresh:
                 # We have a shark!
+                
+                bbox_centre = np.array([(bounding_box[0] + bounding_box[1])/2, (bounding_box[2] + bounding_box[3])/2])
+
+                if len(kalman_filters) == 0:
+                    # First shark detection, initialize a new Kalman filter
+                    kf = initialize_kalman_filter(bbox_centre)
+                    kalman_filters.append(kf)
+                    print('initialized a new Kalman filter')
+                else:
+                    # Match the detection to an existing Kalman filter
+                    index = match_detection_to_track(kalman_filters, bbox_centre)
+                    kalman_filters[index].update(bbox_centre)
+
+
                 name = frame_path + "frame%d.jpg"%count
                 img_1 = img_to_classify(cropped_image, (224,224), 1)
                 frame_df = pd.DataFrame([[video_name, "frame%d"%count, time, "shark", "", conf]], 
@@ -171,6 +186,11 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 dat = pd.concat([frame_df, dat])
                 # cv2.imwrite(name, frame) also save the frame
                 cv2.imwrite("live.jpg", retrieve_frame(cap, count, frame_cap)[1]) # view unaltered frames
+            
+            # Predict next location of Kalman Filters regardless of whether a shark was detected
+            for kf in kalman_filters:
+                kf.predict()
+
             out.write(frame) # for writing a detection box video 
             count = count + interval_frame
             print('frame ' + str(count), end='\r')
