@@ -142,6 +142,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
     #     frame_cap = 100
 
     kalman_filters = []
+    shark_sizes = []
 
     while ret:
         # Capture frame-by-frame
@@ -163,13 +164,14 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
                 if len(kalman_filters) == 0:
                     # First shark detection, initialize a new Kalman filter
                     kf = initialize_kalman_filter(bbox_centre)
-                    kalman_filters.append((kf, (bbox_w, bbox_h)))
+                    kalman_filters.append(kf)
+                    shark_sizes.append((bbox_w, bbox_h))
                     print('initialized a new Kalman filter')
                 else:
                     # Match the detection to an existing Kalman filter
                     kalman_index = match_detection_to_track(kalman_filters, bbox_centre)
                     kalman_filters[kalman_index].update(bbox_centre)
-                    kalman_filters[kalman_index][1] = (bbox_w, bbox_h)
+                    shark_sizes[kalman_index] = (bbox_w, bbox_h)
 
 
                 name = frame_path + "frame%d.jpg"%count
@@ -188,11 +190,12 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
             for i in range(len(kalman_filters)):
                 if i == kalman_index:
                     continue
-                kf = kf[i][0]
+                kf = kalman_filters[0]
                 kf.predict()
                 x, y = kf.x[:2]
                 label = "Shark " + str(i) # Create label with id of the Kalman filter
-                bbox_w, bbox_h = kf[i][1]
+                
+                bbox_w, bbox_h = shark_sizes[i]
                 bbox = (int(x - bbox_w/2), int(y - bbox_h/2), int(x + bbox_w/2), int(y + bbox_h/2))
                 frame = cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2) # Draw bounding box
                 frame = cv2.putText(frame, label, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2) # Add label
