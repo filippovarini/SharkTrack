@@ -38,13 +38,6 @@ models = "./models/"
 shark_class_id = 1
 category_index = {shark_class_id: {'id': shark_class_id, 'name': 'shark'}}
 ##############################################################################################
-def img_to_classify(det_img, size, batch_size):
-    img_1 = img_to_array(det_img.resize(size))
-    img_1 = img_1.reshape((batch_size, img_1.shape[0], 
-                        img_1.shape[1], img_1.shape[2]))
-    img_1 = img_1/255
-    return img_1
-
 def open_vid(videofile):
     try:
         vidcap = cv2.VideoCapture(vid_dir+videofile)
@@ -175,7 +168,6 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
 
 
                 name = frame_path + "frame%d.jpg"%count
-                img_1 = img_to_classify(cropped_image, (224,224), 1)
                 frame_df = pd.DataFrame([[video_name, "frame%d"%count, time, "shark", "", conf]], 
                             columns=list(dat.columns))
                 
@@ -190,6 +182,9 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
             # Predict next location of Kalman Filters regardless of whether a shark was detected
             for kf in kalman_filters:
                 kf.predict()
+                predicted_position = kf.x[:2]
+                frame = cv2.circle(frame, (int(predicted_position[0]), int(predicted_position[1])), 10, (0,0,255), -1)
+                    
 
             out.write(frame) # for writing a detection box video 
             count = count + interval_frame
