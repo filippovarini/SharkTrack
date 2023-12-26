@@ -1,4 +1,5 @@
 tensorflow
+pillow==9.4.0
 tensorflow-object-detection-api
 opencv-python==4.7.0.72
 pandas
