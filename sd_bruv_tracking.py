@@ -141,7 +141,6 @@ def track_sharks(deepsort, frame, boxes, classes, confidences):
         bbox_xyxy = outputs[:, :4]
         identities = outputs[:, -1]
         cls = outputs[:, -2]
-        print(outputs)
         frame = draw_boxes(frame, bbox_xyxy, identities, cls, CLASS_NAMES)
     
     return frame

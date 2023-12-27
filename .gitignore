@@ -5,3 +5,4 @@ __pycache__
 detimages/*
 detvid/*
 models/*
+data/*

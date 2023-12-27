@@ -11,7 +11,7 @@
 4. Add a video of Sharks you want to track in `./www/video`
 5. Activate venv
 6. Run `python sd_bruv_tracking.py`
-7. Check the tracking video output in `./data`
+7. Check the tracking video output in `./detvid`
 
 ### Contacts
 
