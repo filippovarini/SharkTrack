@@ -5,3 +5,13 @@ opencv-python==4.7.0.72
 pandas
 filterpy
 matplotlib
+easydict
+numpy
+scipy
+opencv-python
+scikit-learn
+torch >= 0.4
+torchvision >= 0.1
+pillow
+vizer
+edict
