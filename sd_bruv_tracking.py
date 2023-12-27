@@ -172,7 +172,6 @@ def draw_boxes(frame, bbox, identities=None, categories=None, names=None, offset
         cv2.rectangle(frame, (x1, y1), (x2, y2), color=rectangle_color, thickness=2, lineType=cv2.LINE_AA)
         # Draw text
         # label = str(id) + ":" + names[cat]
-        print(cat)
         label = str(id) + ":" + 'shark'
         (w,h), _ = cv2.getTextSize(str(label), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1/2, thickness=1)
         c2=x1+w, y1-h-3
