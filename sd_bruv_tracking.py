@@ -30,7 +30,7 @@ from models.deep_sort_pytorch.deep_sort import DeepSort
 CLASS_NAMES = {1: 'shark'}
 
 # Hyperparameters
-SHARK_LOCATOR_THRESHOLD = 0.80
+SHARK_LOCATOR_THRESHOLD = 0.60
 ##############################################################################################
 # Old frames will be erased when running this script -- SAVE YOUR DETECTIONS
 data = {'video':[], 'img_name':[], 'time_s':[], 'genus': [], 'species': [], 
