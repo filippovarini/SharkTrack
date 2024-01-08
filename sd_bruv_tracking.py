@@ -28,6 +28,7 @@ from deep_sort_pytorch.deep_sort import DeepSort
 ##############################################################################################
 # Global Variables
 CLASS_NAMES = {1: 'shark'}
+TRACKER = True
 
 # Hyperparameters
 SHARK_LOCATOR_THRESHOLD = 0.40
@@ -102,9 +103,35 @@ def detect(image_np):
     return boxes, classes, confidences
 
 
+def non_maximum_suppression(boxes, classes, confidences, nms_iou_threshold=0.5):
+    """
+    Given boxes ymin, xmin, ymax, xmax format, and confidences, perform non 
+    maximum suppression with iou threshold to remove overlapping boxes.
+    """
+    # Convert boxes to xmin, ymin, xmax, ymax format for nms function
+    xmin = boxes[:, 1]
+    ymin = boxes[:, 0]
+    xmax = boxes[:, 3]
+    ymax = boxes[:, 2]
+    boxes = np.vstack((xmin, ymin, xmax, ymax)).T
+
+    # Perform non maximum suppression
+    indices = cv2.dnn.NMSBoxes(boxes.tolist(), confidences.tolist(), score_threshold=SHARK_LOCATOR_THRESHOLD, nms_threshold=nms_iou_threshold)
+    indices = indices.flatten()
+
+    return boxes[indices], classes[indices], confidences[indices]
+
+
+def process_detections(frame, boxes, classes, confidences):
+    boxes, classes, confidences = non_maximum_suppression(boxes, confidences)
+    frame = draw_boxes(frame, boxes, categories=classes, names=CLASS_NAMES)
+    return frame
+
+
+
 def initialise_deepsort():
     cfg_deep = get_config()
-    cfg_deep.merge_from_file("./models/deep_sort_pytorch/configs/deep_sort.yaml")
+    cfg_deep.merge_from_file("./deep_sort_pytorch/configs/deep_sort.yaml")
     deepsort = DeepSort(
         cfg_deep.DEEPSORT.REID_CKPT,
         max_dist=cfg_deep.DEEPSORT.MAX_DIST, # should be quite low as sharks move slowly
@@ -232,7 +259,7 @@ for vid in os.listdir(vid_dir): # iterate through each video in vid_dir
 
         if ret == True:
             boxes, classes, confidences = detect(frame)
-            frame = track_sharks(deepsort, frame, boxes, classes, confidences)
+            frame = track_sharks(deepsort, frame, boxes, classes, confidences) if TRACKER else process_detections(frame, boxes, classes, confidences)
 
             # Step3: classify sharks (extract the box and classify the new sharks)
             
