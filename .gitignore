@@ -5,4 +5,5 @@ __pycache__
 detimages/*
 detvid/*
 models/*
+!models/deep_sort_pytorch
 data/*

@@ -22,15 +22,17 @@ from base64 import b64encode
 from keras.models import load_model
 from PIL import Image
 from tensorflow.keras.preprocessing.image import img_to_array
-from models.deep_sort_pytorch.utils.parser import get_config
-from models.deep_sort_pytorch.deep_sort import DeepSort
+from deep_sort_pytorch.utils.parser import get_config
+from deep_sort_pytorch.deep_sort import DeepSort
 
 ##############################################################################################
 # Global Variables
 CLASS_NAMES = {1: 'shark'}
 
 # Hyperparameters
-SHARK_LOCATOR_THRESHOLD = 0.60
+SHARK_LOCATOR_THRESHOLD = 0.40
+DEEPSORT_NMS_OVERLAP = 0.3
+DEEPSORT_MAX_IOU_DISTANCE = 0.5
 ##############################################################################################
 # Old frames will be erased when running this script -- SAVE YOUR DETECTIONS
 data = {'video':[], 'img_name':[], 'time_s':[], 'genus': [], 'species': [], 
@@ -107,8 +109,8 @@ def initialise_deepsort():
         cfg_deep.DEEPSORT.REID_CKPT,
         max_dist=cfg_deep.DEEPSORT.MAX_DIST, # should be quite low as sharks move slowly
         min_confidence=SHARK_LOCATOR_THRESHOLD,
-        nms_max_overlap=cfg_deep.DEEPSORT.NMS_MAX_OVERLAP, # this should be higher, since sharks can easily overlap
-        max_iou_distance=cfg_deep.DEEPSORT.MAX_IOU_DISTANCE, # This should be high to make the algorithm more flexible
+        nms_max_overlap=DEEPSORT_NMS_OVERLAP, # this should be higher, since sharks can easily overlap
+        max_iou_distance=DEEPSORT_MAX_IOU_DISTANCE, # This should be high to make the algorithm more flexible
         max_age=cfg_deep.DEEPSORT.MAX_AGE,
         n_init=cfg_deep.DEEPSORT.N_INIT, # we might want this lower as shark detections are sparse
         nn_budget=cfg_deep.DEEPSORT.NN_BUDGET,
@@ -139,12 +141,11 @@ def track_sharks(deepsort, frame, boxes, classes, confidences):
     outputs = deepsort.update(xywh_boxes, confs, oids, frame)
     if len(outputs) > 0:
         bbox_xyxy = outputs[:, :4]
-        identities = outputs[:, -1]
-        cls = outputs[:, -2]
+        cls = outputs[:, -1]
+        identities = outputs[:, -2]
         frame = draw_boxes(frame, bbox_xyxy, identities, cls, CLASS_NAMES)
     
     return frame
-
 
 
 def draw_boxes(frame, bbox, identities=None, categories=None, names=None, offset=0):
@@ -163,7 +164,6 @@ def draw_boxes(frame, bbox, identities=None, categories=None, names=None, offset
         x2 += offset
         y1 += offset
         y2 += offset
-        # cat = int(categories[i]) if categories is not None else 0
         cat = int(categories[i]) if categories is not None else 0
         id = int(identities[i]) if identities is not None else 0
 
@@ -171,8 +171,7 @@ def draw_boxes(frame, bbox, identities=None, categories=None, names=None, offset
         rectangle_color = (0, 255, 0) # should be dynamic per class
         cv2.rectangle(frame, (x1, y1), (x2, y2), color=rectangle_color, thickness=2, lineType=cv2.LINE_AA)
         # Draw text
-        # label = str(id) + ":" + names[cat]
-        label = str(id) + ":" + 'shark'
+        label = str(id) + ":" + names[cat]
         (w,h), _ = cv2.getTextSize(str(label), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1/2, thickness=1)
         c2=x1+w, y1-h-3
         # Draw other rectangle including bounding box
